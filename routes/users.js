@@ -37,7 +37,7 @@ router.get('/userRecentlyPlayedGames',function (req, res, next) {
 
 
 //查询AM的匹配历史
-router.get('/getMatchHistoryByHeroAntimage',function (req, res, next) {
+router.get('/getMatchHistoryByHero',function (req, res, next) {
     console.log("getMatchHistoryByHeroAntimage");
     request(getMatchHistory,function (err, data) {
         if(err){
