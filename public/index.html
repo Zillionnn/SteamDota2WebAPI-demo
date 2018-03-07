@@ -86,7 +86,6 @@
  });
 
 
-
  $.ajax({
      url:'/users/getMatchHistoryByHero',
      method:'GET',
@@ -104,7 +103,7 @@
          let players=result[0].players;
 
          document.getElementById("user-invoker-play-history").innerHTML=`
-         <p>比赛ID：${match_id}</p>
+         <p>比赛ID：${match_id}</p><button onclick="showDetails(${match_id})">查看详细</button>
          <p>比赛时间：${start_time}</p>
          <div style='float: left;'>
          <p id="${match_id}-player0-4"></p>
@@ -173,6 +172,22 @@ getHeroes();
             },
             error:function (err) {
                 console.log("getHeroes>>",err);
+            }
+        });
+    }
+
+
+    function showDetails(match_id) {
+        $.ajax({
+            url:'/users/getMatchDetail',
+            method:'POST',
+            dataType:'json',
+            data:{match_id:match_id},
+            success:function (data) {
+                console.log(data);
+            },
+            error:function (err) {
+                console.error(err);
             }
         });
     }
