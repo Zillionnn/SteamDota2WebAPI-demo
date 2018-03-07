@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+123
+<a href="test.html">test</a>
+<div id="user-section">
+
+</div>
+<div id="user-recent-played-games">
+
+</div>
+</body>
+</html>
+<script src="/javascripts/jquery.js"></script>
+<script>
+ $.ajax({
+     url:'/users/userinfo',
+     method:'GET',
+     dataType:'json',
+     success:function (data) {
+         console.log(data);
+         let player=data.response.players[0];
+         let   steamid=player.steamid;
+         let  avatarfull=player.avatarfull;
+
+         document.getElementById("user-section").innerHTML=`
+<p>${steamid}</p>
+<img src="${avatarfull}">
+`;
+     },
+     error:function (err) {
+         console.log(err);
+     },
+     statusCode:{
+         200:function () {
+             console.log("200");
+         }
+     }
+ });
+
+ $.ajax({
+     url:'/users/userRecentlyPlayedGames',
+     method:'GET',
+     dataType:'json',
+     success:function (data) {
+
+         let games=data.response.games;
+         console.log(games);
+
+         for(var i in games){
+             let childNode=document.createElement('div');
+             let imgUrl=`http://media.steampowered.com/steamcommunity/public/images/apps/${games[i].appid}/${games[i].img_logo_url}`;
+             childNode.innerHTML=`
+<p>
+            <img src="${imgUrl}">:${games[i].name}<br/>
+             play time in 2 weeks:${games[i].playtime_2weeks}h<br/>
+             play total time:${games[i].playtime_forever}h<br/>
+         </p>
+
+
+          `;
+             document.getElementById("user-recent-played-games").appendChild(childNode);
+
+         }
+
+     },
+     error:function (err) {
+         console.log(err);
+     },
+     statusCode:{
+         200:function () {
+             console.log("200");
+         }
+     }
+ });
+
+
+
+ $.ajax({
+     url:'/users/getMatchHistoryByHeroAntimage',
+     method:'GET',
+     dataType:'json',
+     success:function (data) {
+
+         console.log(data);
+
+     },
+     error:function (err) {
+         console.log(err);
+     },
+     statusCode:{
+         200:function () {
+             console.log("200");
+         }
+     }
+ });
+</script>
