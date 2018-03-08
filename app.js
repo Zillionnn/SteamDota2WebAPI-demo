@@ -8,6 +8,7 @@ var bodyParser = require('body-parser');
 var index = require('./routes/index');
 var users = require('./routes/users');
 var hero=require('./routes/hero');
+let gameItems=require('./routes/GameItems');
 
 var app = express();
 
@@ -28,7 +29,7 @@ app.use('/', index);
 app.use('/users', users);
 
 app.use('/hero',hero);
-
+app.use('/item',gameItems);
 
 
 app.all("*",function (req, res, next) {

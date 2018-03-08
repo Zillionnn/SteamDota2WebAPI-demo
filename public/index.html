@@ -3,6 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <title>Title</title>
+    <style>
+        body{
+            background: #242424;
+            color: #e2e2e2;
+        }
+        #user-invoker-play-history{
+            width: 100%;
+            height: 400px;
+            float: left;
+        }
+
+        .matchSection{
+            width: 100%;
+            float: left;
+        }
+    </style>
 </head>
 <body>
 123
@@ -16,52 +32,87 @@
 
 <br/>
 <hr/>
-<p>get Match history by hero_id  account_id  invoker(74)</p>
-<div id="user-invoker-play-history">
+<p>选择英雄</p>
+<select id="heroSelect" >
+</select>
+<p>
+    per page
+<input id="matchesRequest" type="number" min="0" max="100" value="10">
+</p>
+<p>
+    至少
+<input id="min_players" type="number" min="0" max="100" >玩家
+</p>
+<p>
+    ID:<input id="account_id" type="text" placeholder="121320102" value="121320102">
+</p>
+<p>
+    从此比赛id之前
+    <input id="start_at_match_id" type="number" width="30">
+</p>
 
+<button onclick="showSelectHero()">GO</button>
+
+<p>get Match history by hero_id  account_id=121320102  </p>
+<div id="matchHistoryList"></div>
+<div id="matchHistoryId"></div>
+<br/>
+
+
+<div class="matchSection" style="float:left;margin-top: 5em;">
+    <p style="float: left">比赛详情</p>
+    <br/>
+    <div id="matchDetails" style="float: left"> </div>
 </div>
+
 </body>
 </html>
 <script src="/javascripts/jquery.js"></script>
 <script>
- $.ajax({
-     url:'/users/userinfo',
-     method:'GET',
-     dataType:'json',
-     success:function (data) {
-       //  console.log(data);
-         let player=data.response.players[0];
-         let   steamid=player.steamid;
-         let  avatarfull=player.avatarfull;
+    userInfo();
+function userInfo() {
+    $.ajax({
+        url:'/users/userinfo',
+        method:'GET',
+        dataType:'json',
+        success:function (data) {
+            //  console.log(data);
+            let player=data.response.players[0];
+            let   steamid=player.steamid;
+            let  avatarfull=player.avatarfull;
 
-         document.getElementById("user-section").innerHTML=`
+            document.getElementById("user-section").innerHTML=`
 <p>${steamid}</p>
 <img src="${avatarfull}">
 `;
-     },
-     error:function (err) {
-         console.log(err);
-     },
-     statusCode:{
-         200:function () {
-             console.log("200");
-         }
-     }
- });
+        },
+        error:function (err) {
+            console.log(err);
+        },
+        statusCode:{
+            200:function () {
+                console.log("200");
+            }
+        }
+    });
+}
 
- $.ajax({
-     url:'/users/userRecentlyPlayedGames',
-     method:'GET',
-     dataType:'json',
-     success:function (data) {
 
-         let games=data.response.games;
-      //   console.log(games);
+ userRecentlyPlayedGames();
+ function userRecentlyPlayedGames() {
+     $.ajax({
+         url:'/users/userRecentlyPlayedGames',
+         method:'GET',
+         dataType:'json',
+         success:function (data) {
 
-         for(var i in games){
-             let childNode=document.createElement('div');
-             let imgUrl=`http://media.steampowered.com/steamcommunity/public/images/apps/${games[i].appid}/${games[i].img_logo_url}`;
-             childNode.innerHTML=`
+             let games=data.response.games;
+             //   console.log(games);
+
+             for(var i in games){
+                 let childNode=document.createElement('div');
+                 let imgUrl=`http://media.steampowered.com/steamcommunity/public/images/apps/${games[i].appid}/${games[i].img_logo_url}`;
+                 childNode.innerHTML=`
 <p>
             ${games[i].name}<br/>
              play time in 2 weeks:${games[i].playtime_2weeks}h<br/>
@@ -70,39 +121,79 @@
 
 
           `;
-             document.getElementById("user-recent-played-games").appendChild(childNode);
+                 document.getElementById("user-recent-played-games").appendChild(childNode);
 
+             }
+
+         },
+         error:function (err) {
+             console.log(err);
+         },
+         statusCode:{
+             200:function () {
+                 console.log("200");
+             }
          }
-
-     },
-     error:function (err) {
-         console.log(err);
-     },
-     statusCode:{
-         200:function () {
-             console.log("200");
-         }
-     }
- });
+     });
+ }
 
 
- $.ajax({
-     url:'/users/getMatchHistoryByHero',
-     method:'GET',
-     dataType:'json',
-     success:function (data) {
 
-        // console.log(data);
-         //array
-         let result=data.result.matches;
-       //  console.log(result[0]);
 
-        let  start_time=result[0].start_time*1000;
-         start_time=new Date(start_time).toLocaleString();
-         let match_id=result[0].match_id;
-         let players=result[0].players;
+ let resultArray=[];
+function getMatchHistroy(hero_id,min_players,account_id,start_at_match_id,matches_requested) {
+    let data={
+        hero_id:hero_id,
+       min_players:min_players,
+       account_id:account_id,
+        start_at_match_id:start_at_match_id,
+        matches_requested:matches_requested,
 
-         document.getElementById("user-invoker-play-history").innerHTML=`
+
+    };
+    console.log(data);
+    document.getElementById("matchHistoryList").innerHTML="";
+    $.ajax({
+        url:'/users/getMatchHistory',
+        method:'POST',
+        dataType:'json',
+        data:data,
+        success:function (data) {
+
+            console.log(data);
+            //array
+            let result=data.result.matches;
+              resultArray=result;
+              for(var i in result){
+                  let matchNode=document.createElement("p");
+
+                  matchNode.innerHTML=`<p  onclick="showMatchSummary(${i})">${result[i].match_id}</p>`;
+                  document.getElementById("matchHistoryList").appendChild(matchNode);
+              }
+
+
+
+
+        },
+        error:function (err) {
+            console.log(err);
+        },
+        statusCode:{
+            200:function () {
+                console.log("200");
+            }
+        }
+    });
+}
+
+function showMatchSummary(i) {
+
+    let  start_time=resultArray[i].start_time*1000;
+    start_time=new Date(start_time).toLocaleString();
+    let match_id=resultArray[i].match_id;
+    let players=resultArray[i].players;
+
+    document.getElementById("matchHistoryId").innerHTML=`
          <p>比赛ID：${match_id}</p><button onclick="showDetails(${match_id})">查看详细</button>
          <p>比赛时间：${start_time}</p>
          <div style='float: left;'>
@@ -113,53 +204,31 @@
          <p id="${match_id}-player5-9"></p>
          </div>
          `;
-         let jinwei=`${match_id}-player0-4`;
-         let tianzai=`${match_id}-player5-9`;
+    let jinwei=`${match_id}-player0-4`;
+    let tianzai=`${match_id}-player5-9`;
 
-         ///
-         for(var i =0;i<5;i++){
-             let playerNode=document.createElement('p');
-
-            for(var j in HeroArray){
-                if(players[i].hero_id==HeroArray[j].id){
-                    players[i].hero_name=HeroArray[j].localized_name;
-                    break;
-                }
-            }
-
-             playerNode.innerHTML=`${players[i].account_id}----${players[i].hero_name}`;
-             document.getElementById(jinwei).appendChild(playerNode);
-         }
-
-         for(var i =5;i<10;i++){
-             let playerNode=document.createElement('p');
-             for(var j in HeroArray){
-                 if(players[i].hero_id==HeroArray[j].id){
-                     players[i].hero_name=HeroArray[j].localized_name;
-                     break;
-                 }
-             }
-
-             playerNode.innerHTML=`${players[i].account_id}----${players[i].hero_name}`;
-             document.getElementById(tianzai).appendChild(playerNode);
-         }
-         ///
+    ///
+    for(var i =0;i<5;i++){
+        let playerNode=document.createElement('p');
+        players[i].hero_name=handleHeroId(players[i].hero_id);
+        playerNode.innerHTML=`${players[i].account_id}----${players[i].hero_name}`;
+        document.getElementById(jinwei).appendChild(playerNode);
+    }
+    for(var i =5;i<10;i++){
+        let playerNode=document.createElement('p');
+        players[i].hero_name=handleHeroId(players[i].hero_id);
+        playerNode.innerHTML=`${players[i].account_id}----${players[i].hero_name}`;
+        document.getElementById(tianzai).appendChild(playerNode);
+    }
+    ///
+}
 
 
 
-     },
-     error:function (err) {
-         console.log(err);
-     },
-     statusCode:{
-         200:function () {
-             console.log("200");
-         }
-     }
- });
-let  HeroArray=[];
+    let  HeroArray=[];
+    getHeroes();
 
-getHeroes();
+
     function getHeroes() {
         $.ajax({
             url:'hero/getHeroes',
@@ -168,14 +237,39 @@ getHeroes();
             success:function (data) {
                 //console.log(data);
                 HeroArray=data.result.heroes;
-          //   console.log(HeroArray);
+           //  console.log(HeroArray);
+                for(var i in HeroArray){
+                    let optionNode=document.createElement("option");
+
+                    optionNode.setAttribute("value",HeroArray[i].id);
+                    optionNode.innerHTML=`${HeroArray[i].localized_name}`;
+                    document.getElementById("heroSelect").appendChild(optionNode);
+                }
             },
             error:function (err) {
                 console.log("getHeroes>>",err);
             }
         });
     }
+    function handleHeroId(id) {
+        for(var i in HeroArray){
+            if(HeroArray[i].id==id){
+                return HeroArray[i].localized_name;
 
+            }
+        }
+    }
+
+    function showSelectHero(){
+        let hero_id=document.getElementById("heroSelect").value;
+        let min_players=document.getElementById("min_players").value;
+        let account_id=document.getElementById("account_id").value;
+        let start_at_match_id=document.getElementById("start_at_match_id").value;
+        let matches_requested=document.getElementById("matchesRequest").value;
+        document.getElementById("matchHistoryList").innerHTML="";
+        document.getElementById("matchHistoryId").innerHTML="";
+        getMatchHistroy(hero_id,min_players,account_id,start_at_match_id,matches_requested) ;
+    }
 
     function showDetails(match_id) {
         $.ajax({
@@ -185,10 +279,90 @@ getHeroes();
             data:{match_id:match_id},
             success:function (data) {
                 console.log(data);
+                let result=data.result;
+                let duration=(result.duration/60).toFixed(0);
+                let dire_score=result.dire_score;
+                let radiant_score=result.radiant_score;
+                let radiant_win=result.radiant_win;
+                let winner="";
+                if(radiant_win){
+                    winner="近卫";
+                }else{
+                    winner='天灾';
+                }
+                let players=result.players;
+                console.log('players\n',players);
+                document.getElementById("matchDetails").innerHTML=`
+                <p>时间：${duration}min</p>
+                <p>winner:${winner}</p>
+                <span>近卫</span>${radiant_score} : ${dire_score}<span>天灾</span>
+                `;
+                for(var i in players){
+                    let player=document.createElement("p");
+
+                    let account_id=players[i].account_id;
+                    let assists=players[i].assists;
+                    let deaths=players[i].deaths;
+                    let last_hits=players[i].last_hits;
+                    let denies=players[i].denies;
+                    let gold=players[i].gold;
+                    let gold_per_min=players[i].gold_per_min;
+                    let total_gold=gold_per_min*duration;
+                    let hero_damage=players[i].hero_damage;
+                    let hero_id=players[i].hero_id;
+                    let hero_name=handleHeroId(players[i].hero_id);
+                    let item_0=handleItems(players[i].item_0);
+                    let item_1=handleItems(players[i].item_1);
+                    let item_2=handleItems(players[i].item_2);
+                    let item_3=handleItems(players[i].item_3);
+                    let item_4=handleItems(players[i].item_4);
+                    let item_5=handleItems(players[i].item_5);
+                    let kills=players[i].kills;
+                    let levels=players[i].level;
+                    let tower_damage=players[i].tower_damage;
+                    let xp_per_min=players[i].xp_per_min;
+
+                    player.innerHTML=`
+                        <p>${hero_name}Lv.${levels}---杀:${kills}---死:${deaths}---助攻:${assists}----正/反补: ${last_hits}/${denies}---总财产:${total_gold}---每分钟金钱:${gold_per_min}-
+                        --总伤害:${hero_damage}---物品：[${item_0}-${item_1}-${item_2}-${item_3}-${item_4}-${item_5}]---建筑伤害: ${tower_damage}----每分钟经验:${xp_per_min}</p>
+                    `;
+                    document.getElementById("matchDetails").appendChild(player);
+                    if(i==4){
+                        let hrNode=document.createElement("hr");
+                        document.getElementById("matchDetails").appendChild(hrNode);
+                    }
+                }
             },
             error:function (err) {
                 console.error(err);
             }
         });
+    }
+
+
+    let ItemsArray=[];
+    getGameItems();
+    function getGameItems() {
+        $.ajax({
+            url:'/item/getGameItems',
+            method:'GET',
+            dataType:'json',
+            success:function (data) {
+                ItemsArray=data.result.items;
+            //    console.log(ItemsArray);
+            },
+            error:function (err) {
+                console.log(err);
+            }
+
+        });
+    }
+
+    function handleItems(id) {
+        for(var i in ItemsArray){
+            if(ItemsArray[i].id==id){
+                    return ItemsArray[i].localized_name;
+            }
+        }
     }
 </script>

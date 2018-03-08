@@ -2,6 +2,8 @@ var express = require('express');
 var router = express.Router();
 var request=require('request');
 let CONSTANTS=require('../Constants/constant');
+var logger = require('logger').createLogger('./log/hero.log'); // logs to a file
+
 /* GET users listing. */
 router.get('/', function(req, res, next) {
   res.send('respond with a resource');
@@ -16,7 +18,7 @@ router.get('/getHeroes',function (req, res, next) {
         if(err){
           console.log(err);
         }else{
-          console.log(data.body);
+          logger.info(data.body);
           res.send(data.body);
         }
     })
